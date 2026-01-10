@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/iandaly/migrator/filesystem"
 )
@@ -20,8 +23,18 @@ func (a *App) handleCreateMigration() error {
 		os.Mkdir(a.Config.Folder, os.ModePerm)
 	}
 
-	// get the folder name
-	filename := filesystem.CreateMigrationFolderName()
+	// we want to get the last arguments to build the migration filename
+	// for example the user will enter
+	// migrator make:migration create users table
+	// so we make the filename create_users_table
+	// we also replace any slashes incase a user
+	// adds a slash, this will mess up paths
+	userInput := strings.ReplaceAll(strings.Join(os.Args[2:], "_"), "/", "_")
+
+	// prefix the filename with the current unix timestamp to ensure uniqueness
+	now := strconv.FormatInt(time.Now().Unix(), 10)
+
+	filename := fmt.Sprintf("%v_%v", now, userInput)
 
 	// filepath with migrations folder
 	folderPath := fmt.Sprintf("%v/%v", a.Config.Folder, filename)
@@ -39,6 +52,8 @@ func (a *App) handleCreateMigration() error {
 	if err := filesystem.CreateSqlFile(folderPath, "down"); err != nil {
 		return err
 	}
+
+	fmt.Println("Migration created successfully")
 
 	return nil
 }

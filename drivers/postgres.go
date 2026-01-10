@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -39,10 +39,14 @@ func (p *PostgresDriver) Close() error {
 }
 
 // runs a migration at the given path
-func (p *PostgresDriver) RunMigrationFile(ctx context.Context, pathToMigration string) error {
+// migration param is the migration folder
+// direction is either up / down
+func (p *PostgresDriver) RunMigrationFile(ctx context.Context, baseFolder, migration, direction string) error {
 
 	// Read the SQL file
-	sqlFile, err := os.ReadFile(pathToMigration)
+	migrationUpFile := fmt.Sprintf("%v/%v/%v.sql", baseFolder, migration, direction)
+
+	sqlFile, err := os.ReadFile(migrationUpFile)
 	if err != nil {
 		panic(err)
 	}
@@ -71,12 +75,9 @@ func (p *PostgresDriver) RunMigrationFile(ctx context.Context, pathToMigration s
 	}
 
 	// insert the run migration file into the migrations records table
-	// get the filename from a path
-	filename := filepath.Base(pathToMigration)
+	insertQuery := "INSERT INTO migrations(name) VALUES($1)"
 
-	insertQuery := "INSERT INTO migrations(name) VALUES(?)"
-
-	if _, err := tx.Exec(ctx, insertQuery, filename); err != nil {
+	if _, err := tx.Exec(ctx, insertQuery, migration); err != nil {
 		return err
 	}
 
@@ -104,6 +105,34 @@ func (p *PostgresDriver) LastAppliedMigration(ctx context.Context) (string, bool
 	return lastApplied, false, nil
 }
 
+// returns a list of database applied migrations
+func (p *PostgresDriver) ListAppliedMigrations(ctx context.Context) ([]string, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	query := "SELECT name FROM migrations ORDER BY name ASC"
+
+	migrations := make([]string, 0)
+
+	rows, err := p.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var m string
+		if err := rows.Scan(&m); err != nil {
+			return nil, err
+		}
+
+		migrations = append(migrations, m)
+	}
+
+	return migrations, nil
+}
+
 // Creates the migration table to keep track of applied migrations in the database
 func (p *PostgresDriver) CreateMigrationTable(ctx context.Context) error {
 
@@ -119,4 +148,10 @@ func (p *PostgresDriver) CreateMigrationTable(ctx context.Context) error {
 
 	_, err := p.db.Exec(ctx, query)
 	return err
+}
+
+func (p *PostgresDriver) RollbackMigration(ctx context.Context, step int) error {
+
+	// get the list of migrations applied from the database
+	return nil
 }

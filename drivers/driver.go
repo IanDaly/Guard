@@ -23,14 +23,20 @@ type Driver interface {
 
 	// runs a specific migration
 	// we pass the context so migration does not run forever
-	RunMigrationFile(ctx context.Context, pathToMigration string) error
+	RunMigrationFile(ctx context.Context, baseFolder, migration, direction string) error
 
 	// retrieves the last migration applied
 	// if boolean is true, it means no migrations applied
 	LastAppliedMigration(ctx context.Context) (string, bool, error)
 
+	// gets a list of migrations applied to the database
+	ListAppliedMigrations(ctx context.Context) ([]string, error)
+
 	// creates the migration table to keep track of migrations applied
 	CreateMigrationTable(ctx context.Context) error
+
+	// rollback a migration based on steps provided
+	RollbackMigration(ctx context.Context, step int) error
 }
 
 // returns a new driver

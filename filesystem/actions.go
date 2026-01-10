@@ -20,23 +20,6 @@ func CreateSqlFile(folderPath, name string) error {
 	return nil
 }
 
-// retrieves the folder name from the command line args
-// and builds the string with the current unix timestamp
-func CreateMigrationFolderName() string {
-	// we want to get the last arguments to build the migration filename
-	// for example the user will enter
-	// migrator make:migration create users table
-	// so we make the filename create_users_table
-	// we also replace any slashes incase a user
-	// adds a slash, this will mess up paths
-	filename := strings.ReplaceAll(strings.Join(os.Args[2:], "_"), "/", "_")
-
-	// prefix the filename with the current unix timestamp to ensure uniqueness
-	now := strconv.FormatInt(time.Now().Unix(), 10)
-
-	return now + "_" + filename
-}
-
 // check the migrations folder exists
 func MigrationsFolderExists(folder string) bool {
 	_, err := os.Stat(folder)

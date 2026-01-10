@@ -54,7 +54,6 @@ func (a *App) Start() {
 		}
 
 	case "migrate":
-
 		if err := a.EnsureDriver(); err != nil {
 			panic(err)
 		}
@@ -70,6 +69,11 @@ func (a *App) Start() {
 		}
 
 		if err := a.ListPendingMigrations(); err != nil {
+			panic(err)
+		}
+
+	case "rollback":
+		if err := a.EnsureDriver(); err != nil {
 			panic(err)
 		}
 	}
