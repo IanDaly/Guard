@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (a *App) HandleRollback() error {
+func (a *App) Rollback() error {
 
 	// get the last migration applied
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

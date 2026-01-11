@@ -8,7 +8,7 @@ import (
 	"github.com/iandaly/migrator/filesystem"
 )
 
-func (a *App) handleRunMigrations() error {
+func (a *App) RunMigrations() error {
 
 	// get last migration that was applied to the database
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

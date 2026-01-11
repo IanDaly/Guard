@@ -24,9 +24,14 @@ type MigratorConfig struct {
 }
 
 // checks if the config file exists
-func Exists() bool {
-	_, err := os.Stat(fmt.Sprintf("./%v", ConfigFilename))
-	return err == nil
+func Exists() (bool, error) {
+	path, err := os.Getwd()
+	if err != nil {
+		return false, err
+	}
+
+	_, err = os.Stat(fmt.Sprintf("%v/%v", path, ConfigFilename))
+	return err == nil, nil
 }
 
 // creates a config file
@@ -34,8 +39,15 @@ func Create() error {
 	// empty config file body
 	emptyConfig := []byte("---\nurl:\nfolder:\ndriver:")
 
+	path, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
 	// write the migration
-	if err := os.WriteFile(ConfigFilename, emptyConfig, 0755); err != nil {
+	file := fmt.Sprintf("%v/%v", path, ConfigFilename)
+
+	if err := os.WriteFile(file, emptyConfig, 0755); err != nil {
 		return err
 	}
 
@@ -44,7 +56,12 @@ func Create() error {
 
 // loads the config file
 func Load() (*MigratorConfig, error) {
-	data, err := os.ReadFile(fmt.Sprintf("./%v", ConfigFilename))
+	path, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(fmt.Sprintf("%v/%v", path, ConfigFilename))
 	if err != nil {
 		return nil, err
 	}

@@ -137,7 +137,7 @@ func (p *PostgresDriver) ListAppliedMigrations(ctx context.Context) ([]string, e
 }
 
 // Creates the migration table to keep track of applied migrations in the database
-func (p *PostgresDriver) CreateMigrationTable(ctx context.Context) error {
+func (p *PostgresDriver) CreateMigrationsTable(ctx context.Context) error {
 
 	query := `
 		CREATE TABLE IF NOT EXISTS migrations
@@ -182,10 +182,10 @@ func (p *PostgresDriver) RollbackMigrations(ctx context.Context, baseFolder stri
 	}
 
 	// delete the migrations from the table
-	deleteQuery := "DELETE FROM migrations WHERE name IN ($1)"
-	joined := strings.Join(migrations, ",")
+	deleteQuery := "DELETE FROM migrations WHERE name = ANY($1)"
 
-	if _, err := p.db.Exec(ctx, deleteQuery, joined); err != nil {
+	_, err = p.db.Exec(ctx, deleteQuery, migrations)
+	if err != nil {
 		return err
 	}
 

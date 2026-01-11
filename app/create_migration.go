@@ -12,7 +12,7 @@ import (
 )
 
 // creates a new migration inside the migrations folder
-func (a *App) handleCreateMigration() error {
+func (a *App) CreateMigration() error {
 	if err := ensureAllArgs(); err != nil {
 		return err
 	}

@@ -33,7 +33,7 @@ type Driver interface {
 	ListAppliedMigrations(ctx context.Context) ([]string, error)
 
 	// creates the migration table to keep track of migrations applied
-	CreateMigrationTable(ctx context.Context) error
+	CreateMigrationsTable(ctx context.Context) error
 
 	// rollback a migration based on steps provided
 	RollbackMigrations(ctx context.Context, baseFolder string, steps int) error
