@@ -38,8 +38,15 @@ func (a *App) Rollback() error {
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
 
-	if err := a.Driver.RollbackMigrations(ctx, a.Config.Folder, steps); err != nil {
+	migrations, err := a.Driver.GetRollbackMigrations(ctx, steps)
+	if err != nil {
 		return err
+	}
+
+	// apply the down migration to remove migrations
+	for _, migration := range migrations {
+		fmt.Printf("Removing migration: %v\n", migration)
+		a.Driver.RunMigrationFile(ctx, a.Config.Folder, migration, "down")
 	}
 
 	return nil

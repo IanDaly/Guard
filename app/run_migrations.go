@@ -48,6 +48,8 @@ func (a *App) RunMigrations() error {
 
 	// run each migration file
 	for _, migration := range migrations {
+		fmt.Printf("Applying migration: %v\n", migration)
+
 		// allow 15 seconds per migration file running
 		context, cancel := context.WithTimeout(context.Background(), time.Second*15)
 		defer cancel()

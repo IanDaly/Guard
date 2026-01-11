@@ -75,13 +75,17 @@ func (p *PostgresDriver) RunMigrationFile(ctx context.Context, baseFolder, migra
 	}
 
 	// if applying a migration we insert a record
-	if direction == "up" {
-		// insert the run migration file into the migrations records table
-		insertQuery := "INSERT INTO migrations(name) VALUES($1)"
+	// if down we need to delete the migration record
+	var query string
 
-		if _, err := tx.Exec(ctx, insertQuery, migration); err != nil {
-			return err
-		}
+	if direction == "up" {
+		query = "INSERT INTO migrations(name) VALUES($1)"
+	} else {
+		query = "DELETE FROM migrations WHERE name = $1"
+	}
+
+	if _, err := tx.Exec(ctx, query, migration); err != nil {
+		return err
 	}
 
 	// commit if no failures present
@@ -153,7 +157,7 @@ func (p *PostgresDriver) CreateMigrationsTable(ctx context.Context) error {
 	return err
 }
 
-func (p *PostgresDriver) RollbackMigrations(ctx context.Context, baseFolder string, steps int) error {
+func (p *PostgresDriver) GetRollbackMigrations(ctx context.Context, steps int) ([]string, error) {
 
 	migrations := make([]string, 0)
 
@@ -163,31 +167,18 @@ func (p *PostgresDriver) RollbackMigrations(ctx context.Context, baseFolder stri
 
 	rows, err := p.db.Query(ctx, query, steps)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var m string
 		if err := rows.Scan(&m); err != nil {
-			return err
+			return nil, err
 		}
 
 		migrations = append(migrations, m)
 	}
 
-	// apply the down migration to remove migrations
-	for _, migration := range migrations {
-		p.RunMigrationFile(ctx, baseFolder, migration, "down")
-	}
-
-	// delete the migrations from the table
-	deleteQuery := "DELETE FROM migrations WHERE name = ANY($1)"
-
-	_, err = p.db.Exec(ctx, deleteQuery, migrations)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return migrations, nil
 }
