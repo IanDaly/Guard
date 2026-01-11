@@ -44,9 +44,9 @@ func (p *PostgresDriver) Close() error {
 func (p *PostgresDriver) RunMigrationFile(ctx context.Context, baseFolder, migration, direction string) error {
 
 	// Read the SQL file
-	migrationUpFile := fmt.Sprintf("%v/%v/%v.sql", baseFolder, migration, direction)
+	migrationFile := fmt.Sprintf("%v/%v/%v.sql", baseFolder, migration, direction)
 
-	sqlFile, err := os.ReadFile(migrationUpFile)
+	sqlFile, err := os.ReadFile(migrationFile)
 	if err != nil {
 		panic(err)
 	}
@@ -74,11 +74,14 @@ func (p *PostgresDriver) RunMigrationFile(ctx context.Context, baseFolder, migra
 		}
 	}
 
-	// insert the run migration file into the migrations records table
-	insertQuery := "INSERT INTO migrations(name) VALUES($1)"
+	// if applying a migration we insert a record
+	if direction == "up" {
+		// insert the run migration file into the migrations records table
+		insertQuery := "INSERT INTO migrations(name) VALUES($1)"
 
-	if _, err := tx.Exec(ctx, insertQuery, migration); err != nil {
-		return err
+		if _, err := tx.Exec(ctx, insertQuery, migration); err != nil {
+			return err
+		}
 	}
 
 	// commit if no failures present
@@ -150,8 +153,41 @@ func (p *PostgresDriver) CreateMigrationTable(ctx context.Context) error {
 	return err
 }
 
-func (p *PostgresDriver) RollbackMigration(ctx context.Context, step int) error {
+func (p *PostgresDriver) RollbackMigrations(ctx context.Context, baseFolder string, steps int) error {
+
+	migrations := make([]string, 0)
 
 	// get the list of migrations applied from the database
+	// order reversed so we can rollback by number of steps
+	query := "SELECT name FROM migrations ORDER BY name DESC LIMIT $1"
+
+	rows, err := p.db.Query(ctx, query, steps)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var m string
+		if err := rows.Scan(&m); err != nil {
+			return err
+		}
+
+		migrations = append(migrations, m)
+	}
+
+	// apply the down migration to remove migrations
+	for _, migration := range migrations {
+		p.RunMigrationFile(ctx, baseFolder, migration, "down")
+	}
+
+	// delete the migrations from the table
+	deleteQuery := "DELETE FROM migrations WHERE name IN ($1)"
+	joined := strings.Join(migrations, ",")
+
+	if _, err := p.db.Exec(ctx, deleteQuery, joined); err != nil {
+		return err
+	}
+
 	return nil
 }

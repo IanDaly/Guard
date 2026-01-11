@@ -76,6 +76,10 @@ func (a *App) Start() {
 		if err := a.EnsureDriver(); err != nil {
 			panic(err)
 		}
+
+		if err := a.HandleRollback(); err != nil {
+			panic(err)
+		}
 	}
 }
 

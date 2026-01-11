@@ -36,7 +36,7 @@ type Driver interface {
 	CreateMigrationTable(ctx context.Context) error
 
 	// rollback a migration based on steps provided
-	RollbackMigration(ctx context.Context, step int) error
+	RollbackMigrations(ctx context.Context, baseFolder string, steps int) error
 }
 
 // returns a new driver
