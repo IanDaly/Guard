@@ -10,6 +10,12 @@ import (
 )
 
 func main() {
+
+	if len(os.Args) == 1 {
+		fmt.Println("Not enough arguments supplied")
+		return
+	}
+
 	first := os.Args[1]
 
 	// if we are initializing a project
