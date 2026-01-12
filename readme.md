@@ -1,6 +1,6 @@
 # Migrator
 
-A simple database migration tool written in Go.
+A simple database migration tool written in Go for managing and applying database schema changes in a controlled, versioned manner. It supports running migrations forward and backward to evolve database schemas safely.
 
 ## Installation
 
@@ -31,7 +31,7 @@ This creates a `migrator.yaml` configuration file.
 ### Create a new migration
 
 ```bash
-migrator make:migration create_users_table
+migrator make create_users_table
 ```
 
 This creates a new folder in the `migrations` directory with `up.sql` and `down.sql` files.
@@ -46,6 +46,12 @@ migrator migrate
 
 ```bash
 migrator pending
+```
+
+### Rollback migrations
+
+```bash
+migrator rollback
 ```
 
 ## Configuration
